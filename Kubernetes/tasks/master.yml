@@ -1,0 +1,29 @@
+- name: Started Master Node Settings
+  hosts: master
+  vars_prompt:
+    - name: reset
+      prompt: "Do you want enable reset before kubeadm installation [yes/no]"
+      private: no
+  tasks:
+    - include_vars: ../variable/vars.yml
+    - name: Kubeadm Image Pulling
+      shell: |
+        kubeadm config images pull
+    - name: Kubeadm reset
+      shell: |
+        kubeadm reset -f
+      when: reset == "yes"
+    - name: Kubeadm Init And Token Create 
+      shell: |
+        kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address={{master_ip}} --apiserver-cert-extra-sans={{master_ip}}
+      register: token
+    - name: Saving Token File
+      local_action: copy content={{token.stdout}} dest=/root/token_file.txt
+    - name: Create a directory if it does not exist
+      file:
+        path: /root/.kube
+        state: directory
+    - name: Create Kubernetes Home Folder and Other Content
+      shell: |
+        yes | cp  /etc/kubernetes/admin.conf $HOME/.kube/config
+        kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml

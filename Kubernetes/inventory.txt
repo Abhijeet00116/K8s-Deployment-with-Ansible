@@ -1,0 +1,4 @@
+[master]
+target1 ansible_host="<Master Node IP>"
+[worker]
+target2 ansible_host="<Worker Node IP>"
